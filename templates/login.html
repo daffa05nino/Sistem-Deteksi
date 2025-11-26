@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Sistem Deteksi Cacat</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    
+    <style>
+        /* Variabel Warna untuk Konsistensi */
+        :root {
+            --primary-color: #007bff; /* Biru Primer yang Cerah */
+            --secondary-color: #f8f9fa; /* Latar Belakang Input/Card */
+            --text-color: #343a40; /* Warna Teks Gelap */
+            --border-color: #ced4da;
+            --text-dark: #2c3e50;
+            --shadow-light: 0 4px 15px rgba(0, 0, 0, 0.08);
+            --shadow-medium: 0 10px 30px rgba(0, 0, 0, 0.15);
+        }
+
+        /* --- CSS Umum dan Layout Otentikasi Modern --- */
+        body {
+            font-family: 'Poppins', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; /* Mengganti Font ke Poppins jika tersedia */
+            /* Gradasi Latar Belakang yang lebih menarik */
+            background-image: linear-gradient(135deg, #f0f4f7 0%, #e0e8ef 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            color: var(--text-color);
+        }
+
+        .login-container {
+            background-color: white;
+            padding: 40px; /* Padding lebih besar */
+            border-radius: 18px; /* Sudut lebih membulat */
+            box-shadow: var(--shadow-medium);
+            width: 90%;
+            max-width: 420px; /* Lebar sedikit lebih besar */
+            text-align: center;
+            /* Transisi untuk efek pop-up saat dimuat */
+            transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
+        }
+        h2 {
+            color: var(--text-dark);
+        }
+        /* --- Header Styling --- */
+        .header-section h2 {
+            color: var(--primary-color); 
+            margin-bottom: 5px; /* Jarak rapat antara h2 dan p */
+            font-weight: 800; /* Lebih tebal */
+            font-size: 1.8em;
+        }
+        .header-section p {
+            margin-top: 5px;
+            margin-bottom: 30px; /* Jarak lebih besar ke form */
+            color: #6c757d;
+            font-size: 0.95em;
+        }
+        
+        /* --- Form Styling --- */
+        .form-group {
+            margin-bottom: 25px; /* Jarak antar input lebih lega */
+            text-align: left;
+        }
+
+        /* Styling Label */
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: var(--text-color);
+            font-weight: 600;
+            font-size: 0.9em;
+        }
+
+        /* Styling Input Field */
+        .input-wrapper {
+            position: relative;
+        }
+        .input-wrapper input {
+            width: 100%;
+            padding: 14px 15px 14px 45px; /* Tambah padding kiri untuk ikon */
+            border: 1px solid var(--border-color);
+            border-radius: 10px; /* Sudut lebih modern */
+            box-sizing: border-box;
+            background-color: var(--secondary-color);
+            transition: all 0.3s;
+        }
+        .input-wrapper i {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #6c757d;
+            transition: color 0.3s;
+        }
+        .input-wrapper input:focus {
+            border-color: var(--primary-color);
+            outline: none;
+            background-color: white;
+            box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.2);
+        }
+        .input-wrapper input:focus + i {
+            color: var(--primary-color);
+        }
+
+        /* --- Tombol Submit --- */
+        .btn-submit {
+            width: 100%;
+            padding: 15px; /* Tombol lebih tinggi */
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 10px; /* Sudut membulat */
+            font-size: 1.1em;
+            cursor: pointer;
+            transition: background-color 0.3s, transform 0.1s;
+            font-weight: 700;
+            margin-top: 10px;
+        }
+        .btn-submit:hover {
+            background-color: #0056b3; /* Warna lebih gelap saat hover */
+            transform: translateY(-1px); /* Efek tekan */
+        }
+
+        /* --- Link Register --- */
+        .link-register {
+            margin-top: 30px;
+            font-size: 0.9em;
+            color: #6c757d;
+        }
+        .link-register a {
+            color: var(--primary-color);
+            text-decoration: none;
+            font-weight: 700;
+            transition: color 0.3s;
+        }
+        .link-register a:hover {
+            color: #0056b3;
+            text-decoration: underline;
+        }
+
+        /* --- Notifikasi Styling --- */
+        .notification { 
+            padding: 12px; 
+            margin-bottom: 20px; 
+            border-radius: 10px; /* Sudut lebih membulat */
+            text-align: left; 
+            font-size: 0.95em;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+        }
+        .notification i {
+            margin-right: 10px;
+        }
+        .notification.error { 
+            background-color: #fff0f3; 
+            color: #dc3545; 
+            border: 1px solid #dc3545; 
+        }
+        .notification.success { 
+            background-color: #e6fffb; 
+            color: #28a745; 
+            border: 1px solid #28a745; 
+        }
+    </style>
+</head>
+<body>
+    
+    <div class="login-container">
+        <div class="header-section">
+            <h2>SELAMAT DATANG</h2>
+            <p>Silahkan login untuk melanjutkan</p>
+        </div> 
+
+        {% if error %}
+            <div class="notification error"><i class="fas fa-exclamation-circle"></i> {{ error }}</div>
+        {% endif %}
+        
+        {% if success %}
+            <div class="notification success"><i class="fas fa-check-circle"></i> {{ success }}</div>
+        {% endif %}
+
+        <form method="POST" action="{{ url_for('login') }}">
+            
+            <div class="form-group">
+                <label for="username">Username</label>
+                <div class="input-wrapper">
+                    <input type="text" id="username" name="username" required>
+                    <i class="fas fa-user"></i>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="password">Password</label>
+                <div class="input-wrapper">
+                    <input type="password" id="password" name="password" required>
+                    <i class="fas fa-lock"></i> </div>
+            </div>
+            
+            <button type="submit" class="btn-submit">LOGIN</button>
+        </form>
+        
+        <div class="link-register">
+            Belum punya akun? <a href="{{ url_for('register') }}">Daftar Sekarang</a>
+        </div>
+    </div>
+
+</body>
+</html>

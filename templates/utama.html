@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Deteksi - Sistem Deteksi Cacat</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    
+    <style>
+        /* ================================================== */
+        /* CSS LAYOUT & UMUM (Dari kode Anda) */
+        /* ================================================== */
+        body { margin: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f0f2f5; }
+        .main-layout { display: flex; min-height: 100vh; }
+        .sidebar { width: 250px; background-color: #ffffff; box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1); padding: 20px 10px; display: flex; flex-direction: column; position: sticky; top: 0; height: 100vh; }
+        .user-profile { text-align: center; padding: 10px 0 20px; border-bottom: 1px solid #eee; margin-bottom: 20px; }
+        .user-profile .avatar { width: 60px; height: 60px; background-color: #337ab7; border-radius: 50%; margin: 0 auto 10px; display: flex; justify-content: center; align-items: center; color: white; font-size: 1.5em; font-weight: bold; }
+        .user-profile .username { font-size: 1.1em; font-weight: 600; color: #333; }
+        .user-profile .user-role { font-size: 0.9em; color: #666; }
+        .info-box { background-color: #e0f7fa; padding: 15px; border-radius: 8px; margin-top: 15px; margin-bottom: 20px; font-size: 0.9em; color: #00796b; }
+        .navigation { flex: 1; overflow-y: auto; padding-right: 5px; }
+        .nav-link, .dropdown-toggle { display: block; padding: 10px 15px; margin-bottom: 5px; color: #333; text-decoration: none; border-radius: 5px; transition: background-color 0.2s; font-size: 1em; cursor: pointer; }
+        .nav-link:hover, .dropdown-toggle:hover { background-color: #f0f0f0; }
+        .nav-link.active { background-color: #e83a3a; color: white; font-weight: 600; }
+        .nav-link.active:hover { background-color: #cf3333; }
+        .logout-link { margin-top: 20px; padding-top: 15px; border-top: 1px solid #eee; }
+        .logout-link a { color: #e83a3a; text-decoration: none; display: block; text-align: center; padding: 10px; border: 1px solid #e83a3a; border-radius: 6px; transition: background-color 0.3s, color 0.3s; }
+        .logout-link a:hover { background-color: #e83a3a; color: white; }
+
+        /* Main Content Styling (Kanan) */
+        .main-content { flex-grow: 1; padding: 40px; }
+        .content-header { text-align: center; margin-bottom: 30px; }
+        .content-header h1 { font-size: 2.2em; font-weight: 800; color: #333; }
+        .detection-area { max-width: 800px; margin: 0 auto; background-color: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05); }
+        .btn-deteksi { width: 100%; padding: 15px; background-color: #e83a3a; color: white; border: none; border-radius: 8px; font-size: 18px; font-weight: 700; cursor: pointer; transition: background-color 0.3s; margin-top: 20px; }
+        .btn-deteksi:hover { background-color: #cf3333; }
+
+        /* ================================================== */
+        /* CSS KHUSUS UPLOAD & KAMERA */
+        /* ================================================== */
+        .upload-drop-area { border: 2px dashed #ccc; padding: 40px 20px; text-align: center; border-radius: 10px; margin-bottom: 20px; transition: border-color 0.3s, background-color 0.3s; }
+        .upload-drop-area.drag-over { border-color: #e83a3a; background-color: #fff0f0; }
+        .upload-drop-area i { font-size: 3em; color: #aaa; margin-bottom: 10px; }
+        .file-info { font-size: 0.9em; color: #999; margin-top: 10px; }
+        .file-info strong { color: #333; display: block; }
+        .btn-file-browse { display: inline-block; padding: 8px 12px; background-color: #337ab7; color: white; cursor: pointer; border-radius: 5px; margin-top: 15px; font-weight: 600; transition: background-color 0.3s; }
+        .btn-file-browse:hover { background-color: #2a6496; }
+
+        /* Container Kamera */
+        #camera-container { display: none; margin-bottom: 20px; text-align: center; }
+        #video-stream { width: 100%; max-width: 100%; border: 1px solid #ccc; border-radius: 8px; margin-bottom: 10px; background: #000; }
+        #camera-controls { display: flex; justify-content: center; gap: 15px; }
+        .hidden-input { display: none !important; }
+
+        /* ================================================== */
+        /* CSS MODAL PEMBERITAHUAN KUSTOM */
+        /* ================================================== */
+        .modal {
+            display: none; 
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.6); 
+            padding-top: 100px; 
+            transition: opacity 0.3s ease;
+        }
+        .modal-content-alert {
+            background-color: #fefefe;
+            margin: 0 auto; 
+            padding: 30px;
+            border-radius: 10px;
+            width: 90%; 
+            max-width: 350px; 
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            text-align: center;
+            transform: scale(0.95);
+            opacity: 0;
+            transition: transform 0.3s ease, opacity 0.3s ease;
+        }
+        .modal.is-visible .modal-content-alert {
+            transform: scale(1);
+            opacity: 1;
+        }
+        .modal-icon-alert {
+            font-size: 2.5em;
+            color: #28a745; 
+            margin-bottom: 15px;
+            display: block;
+        }
+        .modal-icon-alert.error-icon {
+            color: #ffc107;
+        }
+        .modal-content-alert h5 {
+            margin-bottom: 15px;
+            font-size: 1.1em;
+            color: #333;
+        }
+        .btn-alert-ok {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background-color 0.2s;
+        }
+        .btn-alert-ok:hover {
+            background-color: #0056b3;
+        }
+        .action-buttons-container {
+        display: flex;
+        justify-content: center; 
+        gap: 20px; 
+        margin-top: 30px; 
+        padding-top: 20px;
+        border-top: 1px solid #eee; 
+        }
+        
+        .cancel-btn {
+            display: inline-flex; 
+            align-items: center;
+            justify-content: center; 
+            text-decoration: none;
+            background-color: #e83a3a; 
+            color: white; border: none;
+            padding: 10px 20px; 
+            border-radius: 5px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        .cancel-btn:hover { background-color: #cf3333;
+        }
+        
+        /* Style for Save Button inside the form */
+        #save-form button[type="submit"] {
+            padding: 10px 20px; 
+            background-color: #28a745; 
+            color: white; 
+            border: none; 
+            border-radius: 5px; 
+            cursor: pointer;
+            font-weight: 600;
+            transition: background-color 0.2s;
+        }
+        #save-form button[type="submit"]:hover {
+            background-color: #1e7e34;
+        }
+    </style>
+</head>
+<body>
+    <div class="main-layout">
+        
+        <div class="sidebar">
+            
+            <div class="user-profile">
+                <div class="avatar"><i class="fas fa-user"></i></div>
+                <div class="username">{{ full_name if full_name else (username if username else 'Pengguna') }}</div>
+            </div>
+
+            <div class="info-box">
+                Aplikasi ini menggunakan metode CNN untuk mendeteksi cacat pada kemasan produk secara otomatis.
+            </div>
+
+            <nav class="navigation">
+                <a href="{{ url_for('dashboard') }}" class="nav-link">
+                    <i class="fas fa-home"></i> Dashboard
+                </a>
+                
+                <a href="{{ url_for('utama') }}" class="nav-link active">
+                    <i class="fas fa-camera"></i> Deteksi
+                </a>
+                
+                <a href="{{ url_for('history') }}" class="nav-link">
+                    <i class="fas fa-history"></i> Riwayat Deteksi
+                </a>
+            </nav>
+            <div class="logout-link">
+                <a href="{{ url_for('logout') }}">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </a>
+            </div>
+            
+        </div>
+        
+        <div class="main-content">
+            
+            <div class="content-header">
+                <h1>SISTEM DETEKSI CACAT KEMASAN</h1>
+                <p style="color: #666;">Upload gambar atau ambil foto untuk melakukan deteksi kemasan.</p>
+            </div>
+            
+            <div class="detection-area">
+                
+                {% if error %}
+                    <div style="color: #e83a3a; padding: 10px; background-color: #ffe6e6; border-radius: 6px; margin-bottom: 20px; text-align: center;">
+                        {{ error }}
+                    </div>
+                {% endif %}
+
+                <form method="POST" action="{{ url_for('detect') }}" enctype="multipart/form-data" id="detection-form">
+                    
+                    <div class="upload-drop-area" id="drop-area">
+                        <i class="fas fa-cloud-upload-alt"></i>
+                        <p>Drag and drop files here</p>
+                        <p class="file-info">Limit 200MB per file • PNG, JPG, JPEG</p>
+                        
+                        <label for="file-upload" class="btn-file-browse">
+                            Browse files
+                        </label>
+                        <input type="file" id="file-upload" name="file" accept=".png,.jpg,.jpeg" required class="hidden-input">
+                        
+                        <strong id="file-name-display" style="display: none; margin-top: 10px; color: #e83a3a;"></strong>
+                    </div>
+
+                    <button type="button" class="btn-primary" id="camera-toggle-btn" style="background-color: #337ab7; margin-top: 10px;">
+                        <i class="fas fa-camera"></i> Buka Kamera
+                    </button>
+                    
+                    <div id="camera-container">
+                        <video id="video-stream" autoplay playsinline></video>
+                        <div id="camera-controls">
+                            <button type="button" class="btn-primary" id="snap-btn" style="width: auto; background-color: #00b894; margin: 0;">
+                                <i class="fas fa-camera"></i> Ambil Foto
+                            </button>
+                            <button type="button" class="btn-primary" id="close-camera-btn" style="width: auto; background-color: #ff7675; margin: 0;">
+                                <i class="fas fa-times-circle"></i> Tutup Kamera
+                            </button>
+                        </div>
+                        <canvas id="photo-canvas" style="display:none;"></canvas>
+                        <input type="hidden" id="camera-data-input" name="camera_data">
+                    </div>
+                    
+                    <div id="photo-preview-container" style="display: none; text-align: center; margin-bottom: 20px; padding: 10px; border: 1px solid #ccc; border-radius: 8px;">
+                        <p style="font-weight: 600; margin-bottom: 10px; color: #333;">Foto yang Diambil:</p>
+                        <img id="photo-preview-img" style="max-width: 100%; height: auto; border-radius: 5px;">
+                        <p style="font-size: 0.9em; color: #666; margin-top: 10px;">Tekan **DETEKSI** untuk memproses foto ini.</p>
+                    </div>
+                    
+                    <button type="submit" class="btn-deteksi">DETEKSI</button>
+                </form>
+
+                {% if detection_result %}
+                    <div style="margin-top: 30px; padding: 20px; border: 1px solid #ddd; border-radius: 10px;">
+                        <h3>Hasil Deteksi:</h3>
+                        <p>Status: <strong>{{ detection_result }}</strong></p>
+                        <p>Akurasi: <strong>{{ detection_score }}</strong></p>
+                        <p>Waktu: {{ timestamp }}</p>
+                        
+                        {% if image_path %}
+                            <img src="{{ url_for('static', filename=image_path) }}" alt="Gambar Deteksi" style="max-width: 100%; height: auto; margin-top: 15px; border-radius: 5px;">
+                        {% endif %}
+                        
+                        <div class="action-buttons-container">
+                            
+                            <a href="{{ url_for('utama') }}" class="cancel-btn">
+                            Jangan Simpan
+                            </a>
+
+                            <form id="save-form" method="POST" action="{{ url_for('save_detection') }}">
+                                <input type="hidden" name="hasil" value="{{ detection_result }}">
+                                <input type="hidden" name="score" value="{{ raw_score }}">
+                                <input type="hidden" name="image_path" value="{{ image_path }}">
+                                <button type="submit">
+                                     Simpan Hasil
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                {% endif %}
+
+            </div>
+            
+        </div>
+        
+    </div>
+
+    <div id="custom-alert-modal" class="modal">
+        <div class="modal-content-alert">
+            <span class="modal-icon-alert"><i class="fas fa-check-circle"></i></span>
+            <h5 id="alert-message">Pesan</h5>
+            <button type="button" class="btn-alert-ok" onclick="closeAlertModal()">OK</button>
+        </div>
+    </div>
+    
+    <script>
+        // --- 1. Dropdown Sidebar ---
+        function toggleDropdown(element) {
+            const dropdownMenu = element.nextElementSibling;
+            const chevronIcon = element.querySelector('.fa-chevron-right, .fa-chevron-down');
+            
+            dropdownMenu.classList.toggle('show');
+            
+            const isShown = dropdownMenu.classList.contains('show');
+            chevronIcon.classList.toggle('fa-chevron-down', isShown);
+            chevronIcon.classList.toggle('fa-chevron-right', !isShown);
+        }
+        
+        // --- 2. Fungsionalitas Modal Kustom ---
+        const customAlertModal = document.getElementById('custom-alert-modal');
+        const alertMessageElement = document.getElementById('alert-message');
+        const modalIconElement = customAlertModal.querySelector('.modal-icon-alert');
+
+        function openAlertModal(message, type = 'success') {
+            alertMessageElement.textContent = message;
+            
+            const icon = modalIconElement.querySelector('i');
+            
+            if (type === 'error' || type === 'warning') {
+                // Gunakan ikon untuk peringatan/error
+                icon.className = 'fas fa-exclamation-triangle';
+                modalIconElement.classList.add('error-icon');
+            } else {
+                // Gunakan ikon untuk sukses
+                icon.className = 'fas fa-check-circle';
+                modalIconElement.classList.remove('error-icon');
+            }
+
+            customAlertModal.style.display = 'block';
+            setTimeout(() => {
+                customAlertModal.classList.add('is-visible');
+            }, 10); 
+        }
+
+        function closeAlertModal() {
+            customAlertModal.classList.remove('is-visible');
+            setTimeout(() => {
+                customAlertModal.style.display = 'none';
+            }, 300);
+        }
+        
+        window.onclick = function(event) {
+            if (event.target == customAlertModal) {
+                closeAlertModal();
+            }
+        }
+
+
+        // --- 3. Fungsionalitas Upload File & Drag and Drop ---
+        const fileInput = document.getElementById('file-upload');
+        const dropArea = document.getElementById('drop-area');
+        const fileNameDisplay = document.getElementById('file-name-display');
+        const cameraDataInput = document.getElementById('camera-data-input');
+        const photoPreviewContainer = document.getElementById('photo-preview-container');
+
+        function handleFileSelection(files) {
+            if (files.length) {
+                const file = files[0];
+                
+                // Set input file untuk form submission
+                fileInput.files = files; 
+                
+                // Hapus data kamera jika ada dan sembunyikan preview
+                cameraDataInput.value = ''; 
+                photoPreviewContainer.style.display = 'none';
+                
+                fileNameDisplay.textContent = 'File Dipilih: ' + file.name;
+                fileNameDisplay.style.display = 'block';
+                
+                // File input kembali wajib (untuk memastikan data terisi)
+                fileInput.required = true; 
+            }
+        }
+
+        // Handle File Browse
+        fileInput.addEventListener('change', (e) => {
+            handleFileSelection(e.target.files);
+            // Sembunyikan pesan drop-area setelah file dipilih
+            dropArea.style.display = 'block';
+        });
+
+        // Handle Drag and Drop Events
+        function preventDefaults(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+        
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            dropArea.addEventListener(eventName, preventDefaults, false);
+            // document.body.addEventListener(eventName, preventDefaults, false); // Tidak perlu body
+        });
+
+        ['dragenter', 'dragover'].forEach(eventName => {
+            dropArea.addEventListener(eventName, () => dropArea.classList.add('drag-over'), false);
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            dropArea.addEventListener(eventName, () => dropArea.classList.remove('drag-over'), false);
+        });
+
+        dropArea.addEventListener('drop', (e) => {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+            handleFileSelection(files);
+        }, false);
+
+        
+
+        // --- 4. Fungsionalitas Kamera ---
+        const cameraToggleBtn = document.getElementById('camera-toggle-btn');
+        const cameraContainer = document.getElementById('camera-container');
+        const videoStream = document.getElementById('video-stream');
+        const snapBtn = document.getElementById('snap-btn');
+        const closeCameraBtn = document.getElementById('close-camera-btn');
+        const photoCanvas = document.getElementById('photo-canvas');
+        const photoPreviewImg = document.getElementById('photo-preview-img');
+
+        let stream; // Variabel untuk menyimpan stream kamera
+
+        // Fungsi untuk mengaktifkan kamera
+        async function startCamera() {
+            try {
+                photoPreviewContainer.style.display = 'none';
+                
+                // Prioritaskan kamera belakang/environment
+                stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false });
+                videoStream.srcObject = stream;
+                
+                // Atur display setelah stream didapat
+                cameraContainer.style.display = 'block';
+                cameraToggleBtn.textContent = 'Gunakan File Lokal'; 
+                
+                // Nonaktifkan file input dan tampilannya
+                fileInput.required = false; 
+                fileInput.value = '';
+                fileNameDisplay.style.display = 'none';
+                cameraDataInput.value = '';
+
+                openAlertModal('Kamera berhasil dibuka. Siap untuk mengambil foto!', 'success');
+
+            } catch (err) {
+                // Matikan kamera jika gagal
+                if (stream) {
+                    stream.getTracks().forEach(track => track.stop());
+                }
+                cameraContainer.style.display = 'none';
+                cameraToggleBtn.textContent = 'Buka Kamera';
+                
+                openAlertModal('Gagal mengakses kamera. Pastikan Anda memberikan izin akses kamera.', 'error');
+                console.error("Error mengakses media devices: ", err);
+            }
+        }
+
+        // Fungsi untuk mematikan kamera
+        function stopCamera() {
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop());
+                stream = null;
+            }
+            cameraContainer.style.display = 'none';
+            cameraToggleBtn.textContent = 'Buka Kamera';
+            videoStream.srcObject = null;
+        }
+
+        // Toggle Kamera/File Lokal
+        cameraToggleBtn.addEventListener('click', () => {
+            const isCameraActive = cameraContainer.style.display === 'block';
+
+            if (isCameraActive || photoPreviewContainer.style.display === 'block') {
+                // Beralih ke mode file lokal
+                stopCamera();
+                cameraDataInput.value = ''; // Pastikan data kamera terhapus
+                photoPreviewContainer.style.display = 'none'; // Sembunyikan preview
+                fileInput.required = true; // File input kembali wajib
+                openAlertModal('Beralih ke mode Upload File Lokal.');
+
+            } else {
+                // Buka kamera
+                startCamera();
+            }
+        });
+
+        // Tombol Tutup Kamera
+        closeCameraBtn.addEventListener('click', () => {
+            stopCamera();
+            cameraDataInput.value = '';
+            photoPreviewContainer.style.display = 'none'; 
+            fileInput.required = true;
+            openAlertModal('Kamera ditutup. Beralih ke mode Upload File Lokal.');
+        });
+
+        // Tombol Ambil Foto (Snap)
+        snapBtn.addEventListener('click', () => {
+            const context = photoCanvas.getContext('2d');
+            
+            photoCanvas.width = videoStream.videoWidth;
+            photoCanvas.height = videoStream.videoHeight;
+            
+            context.drawImage(videoStream, 0, 0, photoCanvas.width, photoCanvas.height);
+            
+            // Konversi canvas ke format Base64 JPEG (kualitas 90%)
+            const imageDataURL = photoCanvas.toDataURL('image/jpeg', 0.9);
+            
+            // SIMPAN DATA
+            cameraDataInput.value = imageDataURL;
+            
+            // TAMPILKAN PREVIEW FOTO
+            photoPreviewImg.src = imageDataURL;
+            photoPreviewContainer.style.display = 'block';
+
+            // STOP KAMERA
+            stopCamera(); 
+            
+            // Hapus required pada input file
+            fileInput.required = false; 
+
+            openAlertModal('Foto berhasil diambil dan siap dideteksi! Tekan DETEKSI untuk melanjutkan.');
+        });
+
+        // Handle Form Submission (untuk memastikan salah satu data terisi)
+        document.getElementById('detection-form').addEventListener('submit', (e) => {
+            const isFileSelected = fileInput.files.length > 0;
+            const isCameraDataReady = cameraDataInput.value.length > 0;
+            
+            if (!isFileSelected && !isCameraDataReady) {
+                e.preventDefault();
+                openAlertModal('Mohon pilih file untuk diunggah atau ambil foto dengan kamera sebelum menekan DETEKSI.', 'warning');
+            }
+        });
+    </script>
+</body>
+</html>

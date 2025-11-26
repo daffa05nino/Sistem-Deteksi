@@ -1,0 +1,7 @@
+# requirements.txt
+Flask
+mysql-connector-python
+tensorflow==2.15.0 # Coba tentukan versi yang stabil
+Pillow
+numpy
+werkzeug

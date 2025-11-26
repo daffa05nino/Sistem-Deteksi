@@ -1,0 +1,118 @@
+/* static/style.css (TAMBAHAN UNTUK LAYOUT UTAMA) */
+
+/* Layout Grid Dasar */
+.main-layout {
+    display: flex;
+    min-height: 100vh;
+    background-color: #f0f2f5;
+}
+
+/* Sidebar Styling (Kiri) */
+.sidebar {
+    width: 280px; /* Lebar Sidebar */
+    background-color: #ffffff;
+    box-shadow: 2px 0 5px rgba(0, 0, 0, 0.05);
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Bagian Profil Admin */
+.user-profile {
+    text-align: center;
+    padding-bottom: 20px;
+    border-bottom: 1px solid #eee;
+    margin-bottom: 20px;
+}
+.user-profile .avatar {
+    width: 60px;
+    height: 60px;
+    background-color: #337ab7; /* Warna biru untuk avatar */
+    border-radius: 50%;
+    margin: 0 auto 10px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: white;
+    font-size: 1.5em;
+    font-weight: bold;
+}
+.user-profile .username {
+    font-size: 1.1em;
+    font-weight: 600;
+    color: #333;
+}
+
+/* Box Informasi (Di bawah profil) */
+.info-box {
+    background-color: #e0f7fa; /* Warna latar belakang biru muda */
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    font-size: 0.9em;
+    color: #00796b;
+}
+
+/* Bagian Contoh Penggunaan */
+.usage-guide {
+    /* Tambahan styling jika diperlukan */
+}
+.usage-guide h4 {
+    color: #333;
+    font-size: 1.1em;
+    font-weight: 600;
+    margin-bottom: 15px;
+}
+.usage-guide ol {
+    padding-left: 20px;
+    list-style-type: none;
+}
+.usage-guide ol li {
+    margin-bottom: 10px;
+    font-size: 0.9em;
+    color: #555;
+}
+.usage-guide ol li strong {
+    color: #000;
+}
+
+/* Konten Utama Styling (Kanan) */
+.main-content {
+    flex-grow: 1;
+    padding: 40px;
+}
+.content-header {
+    text-align: center;
+    margin-bottom: 30px;
+}
+.content-header h1 {
+    font-size: 2.2em;
+    font-weight: 800;
+    color: #333;
+}
+
+/* Styling untuk area deteksi (tempat upload dan tombol) */
+.detection-area {
+    max-width: 800px;
+    margin: 0 auto;
+    background-color: white;
+    padding: 30px;
+    border-radius: 10px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+}
+.btn-deteksi {
+    width: 100%;
+    padding: 15px;
+    background-color: #e83a3a;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 18px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background-color 0.3s;
+    margin-top: 20px;
+}
+.btn-deteksi:hover {
+    background-color: #cf3333;
+}
