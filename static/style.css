@@ -9,7 +9,8 @@
 
 /* Sidebar Styling (Kiri) */
 .sidebar {
-    width: 280px; /* Lebar Sidebar */
+    width: 280px;
+    /* Lebar Sidebar */
     background-color: #ffffff;
     box-shadow: 2px 0 5px rgba(0, 0, 0, 0.05);
     padding: 20px;
@@ -24,10 +25,12 @@
     border-bottom: 1px solid #eee;
     margin-bottom: 20px;
 }
+
 .user-profile .avatar {
     width: 60px;
     height: 60px;
-    background-color: #337ab7; /* Warna biru untuk avatar */
+    background-color: #337ab7;
+    /* Warna biru untuk avatar */
     border-radius: 50%;
     margin: 0 auto 10px;
     display: flex;
@@ -37,6 +40,7 @@
     font-size: 1.5em;
     font-weight: bold;
 }
+
 .user-profile .username {
     font-size: 1.1em;
     font-weight: 600;
@@ -45,7 +49,8 @@
 
 /* Box Informasi (Di bawah profil) */
 .info-box {
-    background-color: #e0f7fa; /* Warna latar belakang biru muda */
+    background-color: #e0f7fa;
+    /* Warna latar belakang biru muda */
     padding: 15px;
     border-radius: 8px;
     margin-bottom: 20px;
@@ -57,21 +62,25 @@
 .usage-guide {
     /* Tambahan styling jika diperlukan */
 }
+
 .usage-guide h4 {
     color: #333;
     font-size: 1.1em;
     font-weight: 600;
     margin-bottom: 15px;
 }
+
 .usage-guide ol {
     padding-left: 20px;
     list-style-type: none;
 }
+
 .usage-guide ol li {
     margin-bottom: 10px;
     font-size: 0.9em;
     color: #555;
 }
+
 .usage-guide ol li strong {
     color: #000;
 }
@@ -81,10 +90,12 @@
     flex-grow: 1;
     padding: 40px;
 }
+
 .content-header {
     text-align: center;
     margin-bottom: 30px;
 }
+
 .content-header h1 {
     font-size: 2.2em;
     font-weight: 800;
@@ -100,6 +111,7 @@
     border-radius: 10px;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
 }
+
 .btn-deteksi {
     width: 100%;
     padding: 15px;
@@ -113,6 +125,55 @@
     transition: background-color 0.3s;
     margin-top: 20px;
 }
+
 .btn-deteksi:hover {
     background-color: #cf3333;
+}
+
+/* Stats Box Styling (New) */
+.stats-box {
+    background-color: #fff;
+    border: 1px solid #e3e6f0;
+    border-radius: 0.35rem;
+    padding: 1.5rem;
+    box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
+    display: flex;
+    align-items: center;
+    margin: 20px 0 30px 0;
+    max-width: 100%;
+    /* Adjust as needed */
+}
+
+.stats-icon {
+    background-color: #e3f2fd;
+    color: #337ab7;
+    width: 60px;
+    height: 60px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+    margin-right: 20px;
+    flex-shrink: 0;
+}
+
+.stats-info {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+}
+
+.stats-label {
+    font-size: 16px;
+    color: #5a5c69;
+    font-weight: 600;
+    margin-right: 15px;
+}
+
+.stats-number {
+    font-size: 28px;
+    font-weight: 800;
+    color: #333;
 }

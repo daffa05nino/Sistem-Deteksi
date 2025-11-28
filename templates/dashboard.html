@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="id">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,49 +8,234 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 
     <style>
-        body { margin: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f0f2f5; }
-        .main-layout { display: flex; min-height: 100vh; }
-        .sidebar { width: 250px; background-color: #ffffff; box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1); padding: 20px 10px; display: flex; flex-direction: column; position: sticky; top: 0; height: 100vh; }
+        body {
+            margin: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f0f2f5;
+        }
 
-        .user-profile { text-align: center; padding: 10px 0 20px; border-bottom: 1px solid #eee; margin-bottom: 20px; }
-        .user-profile .avatar { width: 60px; height: 60px; background-color: #337ab7; border-radius: 50%; margin: 0 auto 10px; display: flex; justify-content: center; align-items: center; color: white; font-size: 1.5em; font-weight: bold; }
-        .user-profile .username { font-size: 1.1em; font-weight: 600; color: #333; }
+        .main-layout {
+            display: flex;
+            min-height: 100vh;
+        }
 
-        .info-box { background-color: #e0f7fa; padding: 15px; border-radius: 8px; margin-top: 15px; margin-bottom: 20px; font-size: 0.9em; color: #00796b; }
+        .sidebar {
+            width: 250px;
+            background-color: #ffffff;
+            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+            padding: 20px 10px;
+            display: flex;
+            flex-direction: column;
+            position: sticky;
+            top: 0;
+            height: 100vh;
+        }
 
-        .navigation { flex: 1; overflow-y: auto; padding-right: 5px; }
-        .nav-link { display: block; padding: 10px 15px; margin-bottom: 5px; color: #333; text-decoration: none; border-radius: 5px; transition: background-color 0.2s; font-size: 1em; }
-        .nav-link:hover { background-color: #f0f0f0; }
-        .nav-link.active { background-color: #e83a3a; color: white; font-weight: 600; }
+        .user-profile {
+            text-align: center;
+            padding: 10px 0 20px;
+            border-bottom: 1px solid #eee;
+            margin-bottom: 20px;
+        }
 
-        .logout-link { margin-top: 20px; padding-top: 15px; border-top: 1px solid #eee; }
-        .logout-link a { color: #e83a3a; text-decoration: none; display: block; text-align: center; padding: 10px; border: 1px solid #e83a3a; border-radius: 6px; transition: 0.3s; }
-        .logout-link a:hover { background-color: #e83a3a; color: white; }
+        .user-profile .avatar {
+            width: 60px;
+            height: 60px;
+            background-color: #337ab7;
+            border-radius: 50%;
+            margin: 0 auto 10px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            font-size: 1.5em;
+            font-weight: bold;
+        }
 
-        .content-area { flex-grow: 1; padding: 40px; }
+        .user-profile .username {
+            font-size: 1.1em;
+            font-weight: 600;
+            color: #333;
+        }
 
-        header { border-bottom: 1px solid #ddd; padding-bottom: 20px; margin-bottom: 30px; }
-        header h1 { color: #333; margin: 0; display: flex; align-items: center; }
-        header h1 i { margin-right: 10px; color: #e83a3a; }
+        .info-box {
+            background-color: #e0f7fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            margin-bottom: 20px;
+            font-size: 0.9em;
+            color: #00796b;
+        }
 
-        .card { background-color: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05); margin-bottom: 30px; }
+        .navigation {
+            flex: 1;
+            overflow-y: auto;
+            padding-right: 5px;
+        }
 
-        .guide-section h3 { color: #e83a3a; padding-bottom: 5px; border-bottom: 1px dashed #ddd; }
-        .guide-section ul { list-style: none; padding: 0; }
+        .nav-link {
+            display: block;
+            padding: 10px 15px;
+            margin-bottom: 5px;
+            color: #333;
+            text-decoration: none;
+            border-radius: 5px;
+            transition: background-color 0.2s;
+            font-size: 1em;
+        }
+
+        .nav-link:hover {
+            background-color: #f0f0f0;
+        }
+
+        .nav-link.active {
+            background-color: #e83a3a;
+            color: white;
+            font-weight: 600;
+        }
+
+        .logout-link {
+            margin-top: 20px;
+            padding-top: 15px;
+            border-top: 1px solid #eee;
+        }
+
+        .logout-link a {
+            color: #e83a3a;
+            text-decoration: none;
+            display: block;
+            text-align: center;
+            padding: 10px;
+            border: 1px solid #e83a3a;
+            border-radius: 6px;
+            transition: 0.3s;
+        }
+
+        .logout-link a:hover {
+            background-color: #e83a3a;
+            color: white;
+        }
+
+        .content-area {
+            flex-grow: 1;
+            padding: 40px;
+        }
+
+        header {
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+        }
+
+        header h1 {
+            color: #333;
+            margin: 0;
+            display: flex;
+            align-items: center;
+        }
+
+        header h1 i {
+            margin-right: 10px;
+            color: #e83a3a;
+        }
+
+        .card {
+            background-color: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            margin-bottom: 30px;
+        }
+
+        .guide-section h3 {
+            color: #e83a3a;
+            padding-bottom: 5px;
+            border-bottom: 1px dashed #ddd;
+        }
+
+        .guide-section ul {
+            list-style: none;
+            padding: 0;
+        }
+
         .guide-section li {
             background-color: #f9f9f9;
-            margin-bottom: 10px; padding: 10px 15px;
+            margin-bottom: 10px;
+            padding: 10px 15px;
             border-left: 5px solid #337ab7;
-            border-radius: 4px; display: flex; align-items: center;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
         }
-        .guide-section li i { color: #337ab7; margin-right: 10px; }
 
+        .guide-section li i {
+            color: #337ab7;
+            margin-right: 10px;
+        }
+
+        /* Stats Box Styling */
+        .stats-box {
+            background-color: #fff;
+            border: 1px solid #e3e6f0;
+            border-radius: 0.35rem;
+            padding: 1.5rem;
+            box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
+            display: inline-flex;
+            align-items: center;
+            margin: 20px 0 30px 0;
+        }
+
+        .stats-icon {
+            background-color: #e3f2fd;
+            color: #337ab7;
+            width: 60px;
+            height: 60px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            margin-right: 20px;
+            flex-shrink: 0;
+        }
+
+        .stats-info {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .stats-label {
+            font-size: 16px;
+            color: #5a5c69;
+            font-weight: 600;
+        }
+
+        .stats-number {
+            font-size: 28px;
+            font-weight: 800;
+            color: #333;
+        }
+    </style>
+    <style>
+        /* Guide Box Styling */
+        .guide-box {
+            background-color: #fff;
+            border: 1px solid #e3e6f0;
+            border-radius: 0.35rem;
+            padding: 1.5rem;
+            box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
+            margin-top: 30px;
+            /* Default display is block, so it takes full width */
+        }
     </style>
 </head>
+
 <body>
 
     <div class="main-layout">
-        
+
         <div class="sidebar">
             <div class="user-profile">
                 <div class="avatar"><i class="fas fa-user"></i></div>
@@ -70,87 +256,77 @@
                 <a href="{{ url_for('logout') }}"><i class="fas fa-sign-out-alt"></i> Logout</a>
             </div>
         </div>
-        
+
         <div class="content-area">
 
             <div class="card">
                 <h1 style="font-weight:700; color:#333; margin-top:-15px;">
                     Halo, Selamat Datang <span style="color:#e83a3a;">{{ full_name }}</span>!
-                </h1><hr>
+                </h1>
+                <hr>
 
-                <div style="display:flex; align-items:center; gap:18px; margin:20px 0 30px 0;">
-                    <div style="
-                        width:60px;
-                        height:60px;
-                        background:#e3f2fd;
-                        border-radius:10px;
-                        display:flex;
-                        justify-content:center;
-                        align-items:center;
-                        font-size:28px;
-                        color:#337ab7;">
+                <div class="stats-box">
+                    <div class="stats-icon">
                         <i class="fas fa-database"></i>
                     </div>
-
-                    <div>
-                        <div style="font-size:32px; font-weight:800; line-height:1; color:black;">
-                            {{ total_detections }}
-                        </div>
-                        <div style="opacity:1; font-size:16px; color:black;">
-                            Total Hasil Deteksi Disimpan
-                        </div>
+                    <div class="stats-info">
+                        <span class="stats-label">Total Hasil Deteksi Disimpan</span>
+                        <span class="stats-number">{{ total_detections }}</span>
                     </div>
                 </div>
 
-                <div class="guide-section">
+                <div class="guide-section guide-box">
                     <h3>Panduan Penggunaan</h3>
                     <ul>
                         <li><i class="fas fa-upload"></i> Mulai Deteksi : Pilih menu Deteksi.</li>
-                        <li><i class="fas fa-video"></i> Memilih Gambar : Ambil gambar dari kamera atau pilih file dari perangkat.</li>
-                        <li><i class="fas fa-play"></i> Mulai Deteksi : Setelah gambar dipilih, tekan tombol 'DETEKSI'.</li>
-                        <li><i class="fas fa-clipboard-check"></i> Lihat Hasil : Hasil ditampilkan setelah proses deteksi selesai.</li>
-                        <li><i class="fas fa-save"></i> Riwayat Deteksi : Simpan hasil agar muncul di menu Riwayat Deteksi.</li>
+                        <li><i class="fas fa-video"></i> Memilih Gambar : Ambil gambar dari kamera atau pilih file dari
+                            perangkat.</li>
+                        <li><i class="fas fa-play"></i> Mulai Deteksi : Setelah gambar dipilih, tekan tombol 'DETEKSI'.
+                        </li>
+                        <li><i class="fas fa-clipboard-check"></i> Lihat Hasil : Hasil ditampilkan setelah proses
+                            deteksi selesai.</li>
+                        <li><i class="fas fa-save"></i> Riwayat Deteksi : Simpan hasil agar muncul di menu Riwayat
+                            Deteksi.</li>
                     </ul>
                 </div>
             </div>
-            
+
         </div>
     </div>
 
     <!-- SweetAlert -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
-<!-- safe JSON payload for flash messages -->
-<script id="flash-data" type="application/json">
+    <!-- safe JSON payload for flash messages -->
+    <script id="flash-data" type="application/json">
 {{ {'success': success}|tojson }}
 </script>
 
-<script>
-(function(){
-  // ambil data JSON yang di-render Jinja (aman)
-  let flash = {};
-  try {
-    const el = document.getElementById('flash-data');
-    flash = el && el.textContent ? JSON.parse(el.textContent) : {};
-  } catch (err) {
-    console.warn('Could not parse flash JSON:', err);
-    flash = {};
-  }
+    <script>
+        (function () {
+            // ambil data JSON yang di-render Jinja (aman)
+            let flash = {};
+            try {
+                const el = document.getElementById('flash-data');
+                flash = el && el.textContent ? JSON.parse(el.textContent) : {};
+            } catch (err) {
+                console.warn('Could not parse flash JSON:', err);
+                flash = {};
+            }
 
-  if (flash && flash.success) {
-    Swal.fire({
-      title: "Berhasil",
-      text: flash.success,
-      icon: "success",
-      timer: 1500,
-      showConfirmButton: false,
-      timerProgressBar: true
-    });
-  }
-})();
-</script>
-
-
+            if (flash && flash.success) {
+                Swal.fire({
+                    title: "Berhasil",
+                    text: flash.success,
+                    icon: "success",
+                    timer: 1500,
+                    showConfirmButton: false,
+                    timerProgressBar: true
+                });
+            }
+        })();
+    </script>
 
 </body>
+
 </html>
