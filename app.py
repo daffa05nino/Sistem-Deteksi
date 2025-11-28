@@ -1,391 +1,411 @@
-from flask import Flask, render_template, request, redirect, url_for, session, abort, flash, get_flashed_messages
+from flask import Flask, render_template, request, redirect, url_for, session, flash, get_flashed_messages
 import mysql.connector
 from werkzeug.security import generate_password_hash, check_password_hash
+from werkzeug.utils import secure_filename
 from datetime import datetime
 import uuid
-import io 
-import os 
-import base64 
+import io
+import os
+import base64
 from functools import wraps
+from PIL import Image
+import logging
 
-# =========================================================================
-# KONFIGURASI MYSQL - GANTI DENGAN SETTING ANDA
-# =========================================================================
+# -----------------------------
+# CONFIG
+# -----------------------------
 DB_CONFIG = {
     'user': 'root',
-    'password': '', # <--- GANTI DI SINI (jika ada password)
+    'password': '',
     'host': 'localhost',
     'database': 'sistemdeteksi'
 }
-# =========================================================================
+
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg'}
+MAX_CONTENT_LEN = 16 * 1024 * 1024  # 16 MB
 
 app = Flask(__name__)
-app.secret_key = 'kunci_rahasia_untuk_session_anda_yang_sangat_kuat_12345' 
+app.secret_key = 'kunci_rahasia_sangat_kuat'
 app.config['UPLOAD_FOLDER'] = os.path.join('static', 'uploads')
-app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024 # Batas ukuran file 16MB
+app.config['MAX_CONTENT_LENGTH'] = MAX_CONTENT_LEN
 
-# ----------------------------------------------------------------------
-# FUNGSI UTILITAS
-# ----------------------------------------------------------------------
-def predict_defect(file_obj):
-    """
-    Fungsi DUMMY untuk prediksi.
-    Ganti seluruh logic di fungsi ini dengan model AI (CNN) Anda.
-    """
-    # Mengembalikan dict dengan hasil dan skor mentah (Contoh: CACAT 92.7)
-    # Menggunakan logika sederhana untuk bergantian hasil
-    if datetime.now().second % 2 == 0:
-        return {'hasil': 'CACAT', 'score': 92.7} 
-    else:
-        return {'hasil': 'LOLOS', 'score': 98.1}
+os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+
+logging.basicConfig(level=logging.INFO)
+
+
+# -----------------------------
+# Helpers
+# -----------------------------
+def allowed_file_filename(filename):
+    if not filename:
+        return False
+    return filename.rsplit('.', 1)[-1].lower() in ALLOWED_EXTENSIONS
+
+
+def get_db_connection():
+    try:
+        return mysql.connector.connect(**DB_CONFIG)
+    except mysql.connector.Error as err:
+        app.logger.error(f"DB ERROR: {err}")
+        return None
+
 
 def save_local_file(file_obj, filename):
-    """Menyimpan file gambar ke folder static/uploads/ dan mengembalikan path relatif."""
-    upload_dir = app.config['UPLOAD_FOLDER']
-    if not os.path.exists(upload_dir):
-        os.makedirs(upload_dir)
-    file_path = os.path.join(upload_dir, filename)
-    
-    file_obj.seek(0) 
+    safe = secure_filename(filename)
+    path = os.path.join(app.config['UPLOAD_FOLDER'], safe)
+
     try:
-        with open(file_path, 'wb') as f:
+        file_obj.seek(0)
+        with open(path, 'wb') as f:
             f.write(file_obj.read())
-        return os.path.join('uploads', filename).replace('\\', '/') 
+        return f"uploads/{safe}"
     except Exception as e:
-        print(f"Error saving file: {e}")
+        app.logger.error(f"File save error: {e}")
         return None
-        
-def get_db_connection():
-    """Mencoba membuat dan mengembalikan koneksi database."""
+
+
+def detect_image_type(file_obj):
     try:
-        conn = mysql.connector.connect(**DB_CONFIG)
-        return conn
-    except mysql.connector.Error as err:
-        print(f"FATAL: Database connection error: {err}")
-        return None 
+        file_obj.seek(0)
+        img = Image.open(file_obj)
+        ext = img.format.lower()
+        if ext == "jpeg":
+            return "jpg"
+        return ext
+    except:
+        return None
+
+
+def render_template_with_messages(page, **ctx):
+    msgs = get_flashed_messages(with_categories=True)
+    ctx.setdefault("error", None)
+    ctx.setdefault("success", None)
+
+    for cat, msg in msgs:
+        if cat == "error":
+            ctx["error"] = msg
+        elif cat == "success":
+            ctx["success"] = msg
+    return render_template(page, **ctx)
+
 
 def login_required(f):
-    """Dekorator untuk memastikan pengguna sudah login."""
     @wraps(f)
-    def wrapper(*args, **kwargs):
-        if 'user_id' not in session:
-            flash('Anda perlu masuk untuk mengakses halaman ini.', 'error')
-            return redirect(url_for('login')) 
-        return f(*args, **kwargs)
+    def wrapper(*args, **kw):
+        if "user_id" not in session:
+            flash("Anda harus login dulu!", "error")
+            return redirect(url_for("login"))
+        return f(*args, **kw)
     return wrapper
 
-# ----------------------------------------------------------------------
-# RUTE OTENTIKASI
-# ----------------------------------------------------------------------
 
-@app.route('/')
+# Dummy model
+def predict_defect(file_obj):
+    if datetime.now().second % 2 == 0:
+        return {"hasil": "CACAT", "score": 92.5}
+    return {"hasil": "LOLOS", "score": 97.8}
+
+
+# -----------------------------
+# ROUTES
+# -----------------------------
+@app.route("/")
 def index():
-    if 'user_id' in session:
-        return redirect(url_for('dashboard')) 
-    return redirect(url_for('login'))
+    return redirect(url_for("dashboard")) if "user_id" in session else redirect(url_for("login"))
 
-@app.route('/login', methods=['GET', 'POST'])
+
+# LOGIN
+@app.route("/login", methods=["GET", "POST"])
 def login():
-    if request.method == 'POST':
-        username = request.form['username']
-        password = request.form['password']
+    if request.method == "POST":
+        username = request.form.get("username", "").strip()
+        password = request.form.get("password", "")
+
         conn = get_db_connection()
         if conn is None:
-            flash("Kesalahan koneksi database.", 'error')
-            return render_template('login.html')
+            return render_template_with_messages("login.html", error="DB Error")
 
-        cursor = conn.cursor(dictionary=True)
-        sql = "SELECT id_user, nama, password FROM user WHERE username = %s"
-        cursor.execute(sql, (username,))
-        user = cursor.fetchone()
+        cur = conn.cursor(dictionary=True)
+        cur.execute("SELECT * FROM user WHERE username=%s", (username,))
+        user = cur.fetchone()
         conn.close()
 
-        if user and check_password_hash(user['password'], password):
-            session['user_id'] = user['id_user']
-            session['full_name'] = user['nama']
-            return redirect(url_for('dashboard'))
-        else:
-            flash("Username atau Password salah.", 'error')
-            return render_template('login.html')
-    return render_template('login.html')
+        if not user or not check_password_hash(user["password"], password):
+            return render_template_with_messages("login.html", error="Username atau password salah")
 
-@app.route('/register', methods=['GET', 'POST'])
+        session["user_id"] = user["id_user"]
+        session["full_name"] = user["nama"]
+
+        flash("Login berhasil!", "success")
+        return redirect(url_for("dashboard"))
+
+    return render_template_with_messages("login.html")
+
+
+# REGISTER
+@app.route("/register", methods=["GET", "POST"])
 def register():
-    if request.method == 'POST':
-        nama = request.form['nama']
-        username = request.form['username']
-        password = request.form['password']
-        
-        if not (nama and username and password):
-            flash("Semua kolom harus diisi.", 'error')
-            return render_template('register.html')
-            
-        hashed_password = generate_password_hash(password)
+    if request.method == "POST":
+        nama = request.form.get("nama", "").strip()
+        username = request.form.get("username", "").strip()
+        password = request.form.get("password", "")
 
+        if not nama or not username or not password:
+            return render_template_with_messages("register.html", error="Semua kolom wajib diisi")
+
+        if len(password) < 6:
+            return render_template_with_messages("register.html", error="Password minimal 6 karakter")
+
+        pw_hash = generate_password_hash(password)
         conn = get_db_connection()
-        if conn is None:
-            flash("Kesalahan koneksi database.", 'error')
-            return render_template('register.html')
-            
-        cursor = conn.cursor()
+
         try:
-            sql = "INSERT INTO user (nama, username, password) VALUES (%s, %s, %s)"
-            cursor.execute(sql, (nama, username, hashed_password))
+            cur = conn.cursor()
+            cur.execute("INSERT INTO user (nama, username, password) VALUES (%s, %s, %s)",
+                        (nama, username, pw_hash))
             conn.commit()
-            flash("Registrasi berhasil! Silahkan masuk.", 'success')
-            return redirect(url_for('login'))
-        except mysql.connector.Error as err:
-            conn.rollback()
-            error_msg = "Username sudah digunakan." if err.errno == 1062 else f"Terjadi kesalahan saat registrasi: {err.msg}"
-            flash(error_msg, 'error')
-            return render_template('register.html')
-        finally:
-            if conn: conn.close()
-    return render_template('register.html')
-
-@app.route('/logout')
-def logout():
-    session.clear() 
-    return redirect(url_for('login'))
-
-# ----------------------------------------------------------------------
-# RUTE APLIKASI UTAMA
-# ----------------------------------------------------------------------
-
-@app.route('/dashboard')
-@login_required
-def dashboard():
-    """Route Dashboard/Home"""
-    conn = get_db_connection()
-    total_detections = 0
-    if conn:
-        cursor = conn.cursor()
-        user_id = session.get('user_id')
-        try:
-            sql = "SELECT COUNT(*) FROM hasil_deteksi WHERE id_user = %s"
-            cursor.execute(sql, (user_id,))
-            total_detections = cursor.fetchone()[0]
-        except mysql.connector.Error as err:
-            flash(f"Gagal memuat statistik: {err}", 'error')
+            return render_template_with_messages("login.html", success="Registrasi Berhasil!")
+        except:
+            return render_template_with_messages("register.html", error="Username sudah digunakan")
         finally:
             conn.close()
 
-    # Merender dashboard.html
-    return render_template('dashboard.html', 
-                            full_name=session.get('full_name'),
-                            total_detections=total_detections)
+    return render_template_with_messages("register.html")
 
 
-@app.route('/utama')
+# LOGOUT
+@app.route("/logout")
+def logout():
+    session.clear()
+    flash("Logout berhasil", "success")
+    return redirect(url_for("login"))
+
+
+# DASHBOARD
+@app.route("/dashboard")
+@login_required
+def dashboard():
+    conn = get_db_connection()
+    total = 0
+
+    if conn:
+        cur = conn.cursor()
+        cur.execute("SELECT COUNT(*) FROM hasil_deteksi WHERE id_user=%s", (session["user_id"],))
+        total = cur.fetchone()[0]
+        conn.close()
+
+    return render_template_with_messages("dashboard.html",
+                                         full_name=session["full_name"],
+                                         total_detections=total)
+
+
+# HALAMAN DETEKSI
+@app.route("/utama")
 @login_required
 def utama():
-    """Route Halaman Deteksi/Kamera - Mengambil hasil dari session"""
-    # Mengambil dan MENGHAPUS data hasil dari session saat halaman dimuat
-    # Ini memastikan hasil hanya ditampilkan sekali saat redirect dari /detect
-    detection_result = session.pop('detection_result', None)
-    detection_score = session.pop('detection_score', None)
-    raw_score = session.pop('raw_score', None)
-    image_path = session.pop('image_path', None)
-    timestamp = session.pop('timestamp', None)
-    timestamp_db = session.pop('timestamp_db', None)
-    
-    # Merender utama.html
-    return render_template('utama.html', 
-        full_name=session.get('full_name'),
-        detection_result=detection_result, 
-        detection_score=detection_score, 
-        raw_score=raw_score,
-        image_path=image_path,
-        timestamp=timestamp,
-        timestamp_db=timestamp_db
-    )
+    ctx = {
+        "full_name": session.get("full_name"),
+        "detection_result": session.pop("detection_result", None),
+        "detection_score": session.pop("detection_score", None),
+        "raw_score": session.pop("raw_score", None),
+        "image_path": session.pop("image_path", None),
+        "timestamp": session.pop("timestamp", None),
+        "timestamp_db": session.pop("timestamp_db", None),
+    }
+    return render_template_with_messages("utama.html", **ctx)
 
 
-@app.route('/detect', methods=['POST'])
+# PROSES DETEKSI
+@app.route("/detect", methods=["POST"])
 @login_required
 def detect():
-    """Menangani proses deteksi gambar."""
     file_obj = None
-    original_filename = None
-    
-    # --- 1. MEMPROSES INPUT FILE ATAU KAMERA ---
-    if 'file' in request.files and request.files['file'].filename != '':
-        file_storage = request.files['file']
-        file_obj = io.BytesIO(file_storage.read())
-        original_filename = file_storage.filename
-    elif 'camera_data' in request.form and request.form['camera_data']:
-        data_url = request.form['camera_data']
-        # Pastikan format data URL benar sebelum dipecah
-        if ',' not in data_url:
-             flash("Format data kamera tidak valid.", 'error')
-             return redirect(url_for('utama'))
-             
-        header, encoded = data_url.split(',', 1)
-        try:
-            image_data = base64.b64decode(encoded)
-            file_obj = io.BytesIO(image_data)
-            original_filename = f"capture_{uuid.uuid4().hex[:8]}.jpeg"
-        except Exception as e:
-            flash("Gagal mendekode data kamera.", 'error')
-            return redirect(url_for('utama'))
+    filename = None
+
+    # Upload biasa
+    if "file" in request.files and request.files["file"].filename != "":
+        f = request.files["file"]
+        if not allowed_file_filename(f.filename):
+            return render_template_with_messages("utama.html", error="Format tidak diizinkan")
+        file_obj = io.BytesIO(f.read())
+        filename = f.filename
+
+    # Kamera
+    elif request.form.get("camera_data"):
+        raw = request.form["camera_data"]
+        header, enc = raw.split(",", 1)
+        data = base64.b64decode(enc)
+        file_obj = io.BytesIO(data)
+        ext = detect_image_type(file_obj) or "jpg"
+        filename = f"capture_{uuid.uuid4().hex}.{ext}"
+
     else:
-        flash("Tidak ada file yang diunggah atau foto yang diambil.", 'error')
-        return redirect(url_for('utama'))
+        return render_template_with_messages("utama.html", error="Tidak ada gambar")
 
-    # --- 2. SIMPAN FILE LOKAL ---
-    if file_obj:
-        unique_filename = f"{uuid.uuid4().hex}_{original_filename}"
-        image_path = save_local_file(file_obj, unique_filename) 
-    else:
-        flash("Gagal memproses file/foto.", 'error')
-        return redirect(url_for('utama'))
+    # Simpan file
+    unique = f"{uuid.uuid4().hex}_{secure_filename(filename)}"
+    rel_path = save_local_file(file_obj, unique)
 
-    # --- 3. JALANKAN PREDIKSI AI ---
-    if image_path:
-        file_obj.seek(0)
-        prediction = predict_defect(file_obj) 
+    if not rel_path:
+        return render_template_with_messages("utama.html", error="Gagal menyimpan file")
 
-        # --- 4. SIMPAN HASIL DI SESSION ---
-        raw_score = prediction['score']
-        
-        session['detection_result'] = prediction['hasil']
-        session['detection_score'] = f"{raw_score:.2f}%"
-        session['raw_score'] = raw_score 
-        session['image_path'] = image_path
-        session['timestamp'] = datetime.now().strftime('%d %B %Y, %H:%M:%S') 
-        session['timestamp_db'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S') 
-        
-        # Redirect ke rute utama untuk menampilkan hasil dari session
-        return redirect(url_for('utama'))
-    
-    flash("Terjadi kesalahan saat memproses deteksi.", 'error')
-    return redirect(url_for('utama'))
+    # Prediksi
+    file_obj.seek(0)
+    pred = predict_defect(file_obj)
+    score = float(pred["score"])
 
-@app.route('/save_detection', methods=['POST'])
+    session["detection_result"] = pred["hasil"]
+    session["detection_score"] = f"{score:.2f}%"
+    session["raw_score"] = score
+    session["image_path"] = rel_path
+    session["timestamp"] = datetime.now().strftime("%d %B %Y %H:%M:%S")
+    session["timestamp_db"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+    return redirect(url_for("utama"))
+
+
+# SIMPAN HASIL DETEKSI
+@app.route("/save_detection", methods=["POST"])
 @login_required
 def save_detection():
-    hasil = request.form.get('hasil')
-    score_str = request.form.get('score')
-    image_path = request.form.get('image_path')
-    timestamp_db = request.form.get('timestamp_db')
-    user_id = session.get('user_id')
-    
-    try:
-        score = float(score_str)
-    except (TypeError, ValueError):
-        flash("Skor deteksi tidak valid.", 'error')
-        return redirect(url_for('utama'))
+    hasil = request.form.get("hasil")
+    score = request.form.get("score")
+    image = request.form.get("image_path")
+    waktu = request.form.get("timestamp_db")
 
-    if not all([hasil, score_str, image_path, timestamp_db, user_id]):
-        flash("Data hasil deteksi tidak lengkap untuk disimpan.", 'error')
-        return redirect(url_for('utama'))
+    score_val = float(score.replace("%", ""))
 
     conn = get_db_connection()
-    if conn is None:
-        flash("Kesalahan Koneksi Database saat menyimpan data.", 'error')
-        return redirect(url_for('utama'))
+    cur = conn.cursor()
 
-    cursor = conn.cursor()
-    try:
-        sql = """INSERT INTO hasil_deteksi 
-                 (id_user, id_gambar, hasil, score, tanggal_deteksi) 
-                 VALUES (%s, %s, %s, %s, %s)"""
-        # Perhatikan urutan dan tipe data parameter (float(score))
-        cursor.execute(sql, (user_id, image_path, hasil, score, timestamp_db))
-        conn.commit()
-        
-        flash("Hasil deteksi berhasil disimpan ke Riwayat!", 'success')
-        return redirect(url_for('history'))
-    except mysql.connector.Error as err:
-        conn.rollback()
-        flash(f"Terjadi kesalahan saat menyimpan data: {err}", 'error')
-        return redirect(url_for('utama'))
-    finally:
-        if conn: conn.close()
+    cur.execute("""
+        INSERT INTO hasil_deteksi (id_user, id_gambar, hasil, score, tanggal_deteksi)
+        VALUES (%s, %s, %s, %s, %s)
+    """, (session["user_id"], image, hasil, score_val, waktu))
 
+    conn.commit()
+    conn.close()
+
+    flash("Data berhasil disimpan!", "success")
+    return redirect(url_for("history"))
+
+
+# RIWAYAT DETEKSI
 @app.route('/history')
 @login_required
 def history():
-    conn = get_db_connection()
     user_id = session.get('user_id')
+    print("DEBUG user_id =", user_id)
+
+    conn = get_db_connection()
     history_data = []
-    error_message = None
 
     if conn is None:
-        # Jika gagal koneksi, tampilkan pesan error yang jelas
-        flash("Kesalahan Koneksi Database.", 'error')
-    else:
-        cursor = conn.cursor(dictionary=True) 
-        try:
-            # Query MySQL dengan format tanggal yang benar
-            sql = """SELECT id_deteksi, id_gambar, hasil, score, 
-                      DATE_FORMAT(tanggal_deteksi, '%d %b %Y, %H:%i:%s') as formatted_date
-                      FROM hasil_deteksi 
-                      WHERE id_user = %s 
-                      ORDER BY tanggal_deteksi DESC"""
-            # Parameter tunggal diberikan dalam tuple (user_id,)
-            cursor.execute(sql, (user_id,)) 
-            history_data = cursor.fetchall()
-        except mysql.connector.Error as err:
-            error_message = f"Kesalahan saat memuat data riwayat: {err}"
-            flash(error_message, 'error') # Flash error database
-        finally:
-            if conn: conn.close()
-    
-    # Ambil semua flash messages untuk ditampilkan di template
-    # Anda perlu mengulanginya di template HTML Anda
-    return render_template('history.html', 
-        full_name=session.get('full_name'),
-        history_data=history_data
+        return render_template_with_messages(
+            'history.html',
+            error="Kesalahan koneksi database.",
+            history_data=[],
+            full_name=session.get('full_name')
+        )
+
+    try:
+        cursor = conn.cursor(dictionary=True)
+
+        # Query tanpa DATE_FORMAT
+        sql = """
+            SELECT id_deteksi, id_gambar, hasil, score, tanggal_deteksi
+            FROM hasil_deteksi
+            WHERE id_user = %s
+            ORDER BY tanggal_deteksi DESC
+        """
+
+        print("DEBUG SQL =", sql)
+        cursor.execute(sql, (user_id,))
+        rows = cursor.fetchall()
+
+        # Format tanggal di Python (pasti berfungsi)
+        for r in rows:
+            try:
+                r["formatted_date"] = r["tanggal_deteksi"].strftime("%d %b %Y, %H:%M:%S")
+            except:
+                r["formatted_date"] = "-"
+            history_data.append(r)
+
+    except mysql.connector.Error as e:
+        app.logger.error(f"SQL error (history): {e}")
+        return render_template_with_messages(
+            'history.html',
+            error="Gagal memuat riwayat.",
+            history_data=[],
+            full_name=session.get('full_name')
+        )
+
+    finally:
+        conn.close()
+
+    return render_template_with_messages(
+        'history.html',
+        history_data=history_data,
+        full_name=session.get('full_name')
     )
 
-@app.route('/delete/<int:id_deteksi>', methods=['POST'])
+# DELETE RIWAYAT
+@app.route('/delete_detection/<int:id_deteksi>', methods=['POST'])
 @login_required
 def delete_detection(id_deteksi):
     user_id = session.get('user_id')
+
     conn = get_db_connection()
-
     if conn is None:
-        flash("Kesalahan Koneksi Database saat menghapus data.", 'error')
-        return redirect(url_for('history'))
+        flash("Kesalahan koneksi database.", "error")
+        return redirect(url_for("history"))
 
-    cursor = conn.cursor(dictionary=True)
-    
     try:
-        sql_select = "SELECT id_gambar FROM hasil_deteksi WHERE id_deteksi = %s AND id_user = %s"
-        cursor.execute(sql_select, (id_deteksi, user_id))
-        record = cursor.fetchone()
+        cursor = conn.cursor(dictionary=True)
 
-        if record:
-            image_path_relative = record['id_gambar']
-            image_path_full = os.path.join(app.root_path, 'static', image_path_relative)
-            
-            sql_delete = "DELETE FROM hasil_deteksi WHERE id_deteksi = %s AND id_user = %s"
-            cursor.execute(sql_delete, (id_deteksi, user_id))
-            conn.commit()
+        # 1. Ambil nama file gambar dari DB
+        cursor.execute("""
+            SELECT id_gambar FROM hasil_deteksi
+            WHERE id_deteksi = %s AND id_user = %s
+        """, (id_deteksi, user_id))
+        data = cursor.fetchone()
 
-            # Hapus file fisik setelah berhasil dihapus dari DB
-            if os.path.exists(image_path_full) and os.path.isfile(image_path_full):
-                os.remove(image_path_full)
-            
-            flash("Hasil deteksi berhasil dihapus!", 'success')
-            return redirect(url_for('history'))
+        if not data:
+            flash("Data tidak ditemukan.", "error")
+            return redirect(url_for("history"))
+
+        file_path = data["id_gambar"]  # contoh: uploads/abc123.png
+        full_path = os.path.join(app.static_folder, file_path)
+
+        # 2. Hapus data dari database
+        cursor.execute("""
+            DELETE FROM hasil_deteksi
+            WHERE id_deteksi = %s AND id_user = %s
+        """, (id_deteksi, user_id))
+        conn.commit()
+
+        # 3. Hapus file gambar fisik jika ada
+        if os.path.exists(full_path):
+            os.remove(full_path)
+            print("FILE DELETED:", full_path)
         else:
-            flash("Data riwayat tidak ditemukan atau Anda tidak memiliki akses.", 'error')
-            return redirect(url_for('history'))
+            print("FILE NOT FOUND:", full_path)
 
-    except mysql.connector.Error as err:
-        conn.rollback()
-        flash(f"Kesalahan SQL saat menghapus: {err}", 'error')
-        return redirect(url_for('history'))
+        flash("Berhasil dihapus!", "success")
+
     except Exception as e:
-        flash(f"Kesalahan sistem saat menghapus file: {e}", 'error')
-        return redirect(url_for('history'))
-    finally:
-        if conn: conn.close()
+        app.logger.error(f"Delete error: {e}")
+        flash("Gagal menghapus data.", "error")
 
-if __name__ == '__main__':
-    # Pastikan folder uploads ada
-    if not os.path.exists(os.path.join('static', 'uploads')):
-        os.makedirs(os.path.join('static', 'uploads'))
+    finally:
+        conn.close()
+
+    return redirect(url_for('history'))
+
+
+
+
+# MAIN
+if __name__ == "__main__":
     app.run(debug=True)

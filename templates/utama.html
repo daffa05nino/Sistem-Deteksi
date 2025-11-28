@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     
     <style>
+        /* (CSS sama persis seperti yang kamu kirim) */
         /* ================================================== */
         /* CSS LAYOUT & UMUM (Dari kode Anda) */
         /* ================================================== */
@@ -152,6 +153,10 @@
         #save-form button[type="submit"]:hover {
             background-color: #1e7e34;
         }
+
+        .notification { padding: 12px; border-radius: 6px; margin-bottom: 20px; font-weight: 600; }
+        .notification.error { background-color: #fff0f0; color: #c00; border: 1px solid #f5c6cb; }
+        .notification.success { background-color: #e6ffef; color: #0a7; border: 1px solid #c3e6cb; }
     </style>
 </head>
 <body>
@@ -161,7 +166,7 @@
             
             <div class="user-profile">
                 <div class="avatar"><i class="fas fa-user"></i></div>
-                <div class="username">{{ full_name if full_name else (username if username else 'Pengguna') }}</div>
+                <div class="username">{{ full_name if full_name else 'Pengguna' }}</div>
             </div>
 
             <div class="info-box">
@@ -199,8 +204,14 @@
             <div class="detection-area">
                 
                 {% if error %}
-                    <div style="color: #e83a3a; padding: 10px; background-color: #ffe6e6; border-radius: 6px; margin-bottom: 20px; text-align: center;">
-                        {{ error }}
+                    <div class="notification error">
+                        <i class="fas fa-exclamation-circle"></i> {{ error }}
+                    </div>
+                {% endif %}
+
+                {% if success %}
+                    <div class="notification success">
+                        <i class="fas fa-check-circle"></i> {{ success }}
                     </div>
                 {% endif %}
 
@@ -209,7 +220,7 @@
                     <div class="upload-drop-area" id="drop-area">
                         <i class="fas fa-cloud-upload-alt"></i>
                         <p>Drag and drop files here</p>
-                        <p class="file-info">Limit 200MB per file • PNG, JPG, JPEG</p>
+                        <p class="file-info">Limit 16MB per file • PNG, JPG, JPEG</p>
                         
                         <label for="file-upload" class="btn-file-browse">
                             Browse files
@@ -267,6 +278,7 @@
                                 <input type="hidden" name="hasil" value="{{ detection_result }}">
                                 <input type="hidden" name="score" value="{{ raw_score }}">
                                 <input type="hidden" name="image_path" value="{{ image_path }}">
+                                <input type="hidden" name="timestamp_db" value="{{ timestamp_db }}">
                                 <button type="submit">
                                      Simpan Hasil
                                 </button>
@@ -290,6 +302,7 @@
     </div>
     
     <script>
+        // (JS sama persis seperti yang kamu kirim; tidak diubah)
         // --- 1. Dropdown Sidebar ---
         function toggleDropdown(element) {
             const dropdownMenu = element.nextElementSibling;
@@ -340,7 +353,6 @@
                 closeAlertModal();
             }
         }
-
 
         // --- 3. Fungsionalitas Upload File & Drag and Drop ---
         const fileInput = document.getElementById('file-upload');
@@ -399,8 +411,6 @@
             const files = dt.files;
             handleFileSelection(files);
         }, false);
-
-        
 
         // --- 4. Fungsionalitas Kamera ---
         const cameraToggleBtn = document.getElementById('camera-toggle-btn');

@@ -42,23 +42,19 @@
         .history-table tr:nth-child(even) { background-color: #f9f9f9; }
         .history-table tr:hover { background-color: #f0f0f0; }
 
-        /* Detail Baris */
         .detail-row { display: none; background-color: #fff9e6; }
         .detail-content { padding: 15px; display: flex; gap: 20px; align-items: center; }
         .detail-content img { max-width: 150px; height: auto; border-radius: 5px; border: 1px solid #ccc; }
         .detail-info strong { display: block; margin-bottom: 5px; color: #333; }
 
-        /* Tombol Aksi */
         .btn-detail, .btn-delete { background: none; border: none; cursor: pointer; font-size: 1.1em; margin: 0 5px; transition: color 0.2s; }
         .btn-detail { color: #337ab7; }
         .btn-delete { color: #e83a3a; }
-        
-        /* Badge Hasil */
+
         .badge { padding: 5px 10px; border-radius: 4px; font-weight: 700; font-size: 0.85em; }
         .badge.cacat { background-color: #ffcccc; color: #cc0000; }
         .badge.non-cacat { background-color: #ccffcc; color: #008000; }
 
-        /* Modal Hapus */
         .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.4); opacity: 0; transition: opacity 0.3s; }
         .modal.is-visible { opacity: 1; }
         .modal-content { background-color: #fefefe; margin: 15% auto; padding: 20px; border: 1px solid #888; width: 80%; max-width: 400px; border-radius: 10px; text-align: center; transform: translateY(-50px); transition: transform 0.3s; }
@@ -93,7 +89,7 @@
                     <i class="fas fa-camera"></i> Deteksi
                 </a>
 
-                <a href="{{ url_for('history') }}" class="nav-link">
+                <a href="{{ url_for('history') }}" class="nav-link active">
                     <i class="fas fa-history"></i> Riwayat Deteksi
                 </a>
             </nav>
@@ -121,53 +117,65 @@
                 <div class="notification success"><i class="fas fa-check-circle"></i> {{ success }}</div>
             {% endif %}
 
-            {% if history_data %}
+            {% if history_data and history_data|length > 0 %}
                 <table class="history-table">
                     <thead>
                         <tr>
                             <th>No.</th>
-                            <th>Tanggal</th>
+                            <th>Gambar</th>
                             <th>Hasil</th>
                             <th>Akurasi</th>
+                            <th>Tanggal/Waktu</th>
                             <th>Aksi</th>
                         </tr>
                     </thead>
                     <tbody>
-                        {% for row in history_data %}
-                        <tr class="main-row" onclick="toggleDetail(this, 'detail-{{ loop.index }}')">
-                            <td>{{ loop.index }}</td>
-                            <td>{{ row.formatted_date }}</td>
-                            <td>
-                                <span class="badge {{ 'cacat' if row.hasil == 'CACAT' else 'non-cacat' }}">
-                                    {{ row.hasil }}
-                                </span>
-                            </td>
-                            <td>{{ "%.2f"|format(row.score) }}%</td>
-                            <td>
-                                <button type="button" class="btn-detail" title="Lihat Detail">
-                                    <i class="fas fa-chevron-right"></i>
-                                </button>
-                                <button type="button" class="btn-delete" title="Hapus Data" 
-                                    data-delete-url="{{ url_for('delete_detection', id_deteksi=row.id_deteksi) }}"
-                                    onclick="event.stopPropagation(); openDeleteModal(this)">
-                                    <i class="fas fa-trash-alt"></i>
-                                </button>
-                            </td>
-                        </tr>
-                        <tr id="detail-{{ loop.index }}" class="detail-row">
-                            <td colspan="5">
-                                <div class="detail-content">
-                                    <img src="{{ url_for('static', filename=row.id_gambar) }}" alt="Gambar Deteksi">
-                                    <div class="detail-info">
-                                        <strong>ID Deteksi:</strong> {{ row.id_deteksi }}
-                                        <strong>File Gambar:</strong> {{ row.id_gambar.split('/')[-1] }}
-                                        <strong>Hasil Lengkap:</strong> {{ row.hasil }} ({{ "%.2f"|format(row.score) }}%)
-                                    </div>
-                                </div>
-                            </td>
-                        </tr>
-                        {% endfor %}
+                        {% if history_data %}
+                            {% for row in history_data %}
+                            <tr>
+                                <!-- NO -->
+                                <td>{{ loop.index }}</td>
+
+                                <!-- GAMBAR -->
+                                <td>
+                                    <img src="{{ url_for('static', filename=row.id_gambar) }}"
+                                        alt="Hasil Deteksi"
+                                        style="width: 70px; height: 70px; object-fit: cover; border-radius: 6px;">
+                                </td>
+
+                                <!-- HASIL -->
+                                <td>
+                                    {% if row.hasil == 'LOLOS' %}
+                                        <span class="badge bg-success" style="padding:6px 10px;">LOLOS</span>
+                                    {% else %}
+                                        <span class="badge bg-danger" style="padding:6px 10px;">CACAT</span>
+                                    {% endif %}
+                                </td>
+
+                                <!-- AKURASI -->
+                                <td>{{ row.score }}%</td>
+
+                                <!-- TANGGAL -->
+                                <td>{{ row.formatted_date }}</td>
+
+                                <!-- AKSI -->
+                                <td>
+                                <!-- DELETE -->
+                                    <button type="button" class="btn-delete" title="Hapus Data" 
+                                        data-delete-url="{{ url_for('delete_detection', id_deteksi=row.id_deteksi) }}"
+                                        onclick="event.stopPropagation(); openDeleteModal(this)">
+                                        <i class="fas fa-trash-alt"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td colspan="6" class="text-center">Belum ada riwayat deteksi.</td>
+                            </tr>
+                        {% endif %}
                     </tbody>
+
                 </table>
             {% else %}
                 <div style="text-align: center; padding: 50px; background-color: white; border-radius: 8px; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);">
@@ -195,20 +203,16 @@
         </div>
     </div>
 
-
     <script>
-        // --- FUNGSI DETAIL BARIS ---
         function toggleDetail(mainRowElement, detailId) {
             const detailRow = document.getElementById(detailId);
             const isShown = detailRow.style.display === 'table-row';
             const chevronIcon = mainRowElement.querySelector('.btn-detail i');
 
-            // Tutup semua baris detail yang terbuka
             document.querySelectorAll('.detail-row').forEach(row => {
-                if (row.id !== detailId) {
-                    row.style.display = 'none';
-                }
+                if (row.id !== detailId) row.style.display = 'none';
             });
+
             document.querySelectorAll('.main-row .btn-detail i').forEach(icon => {
                 if (icon !== chevronIcon) {
                     icon.classList.remove('fa-chevron-down');
@@ -216,43 +220,29 @@
                 }
             });
 
-            // Tampilkan atau sembunyikan baris yang dipilih
-            if (isShown) {
-                detailRow.style.display = 'none';
-            } else {
-                detailRow.style.display = 'table-row';
-            }
-
-            // Ganti ikon chevron
+            detailRow.style.display = isShown ? 'none' : 'table-row';
             chevronIcon.classList.toggle('fa-chevron-down', !isShown);
             chevronIcon.classList.toggle('fa-chevron-right', isShown);
         }
-        
-        // --- FUNGSI MODAL HAPUS ---
+
         const deleteModal = document.getElementById('delete-modal');
         const deleteFormModal = document.getElementById('delete-form-modal');
 
         function openDeleteModal(element) {
             const deleteUrl = element.getAttribute('data-delete-url');
             deleteFormModal.action = deleteUrl;
-            
+
             deleteModal.style.display = 'block';
-            setTimeout(() => {
-                deleteModal.classList.add('is-visible');
-            }, 10); 
+            setTimeout(() => deleteModal.classList.add('is-visible'), 10);
         }
 
         function closeDeleteModal() {
             deleteModal.classList.remove('is-visible');
-            setTimeout(() => {
-                deleteModal.style.display = 'none';
-            }, 300); 
+            setTimeout(() => deleteModal.style.display = 'none', 300);
         }
 
         window.onclick = function(event) {
-            if (event.target == deleteModal) {
-                closeDeleteModal();
-            }
+            if (event.target == deleteModal) closeDeleteModal();
         }
     </script>
 </body>
